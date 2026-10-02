@@ -8,6 +8,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
+import io.flutter.plugin.common.StandardMethodCodec
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding
 
@@ -19,7 +20,15 @@ class FlutterJailbreakDetectionPlugin : FlutterPlugin, MethodCallHandler {
 
 
     override fun onAttachedToEngine(binding: FlutterPluginBinding) {
-        channel = MethodChannel(binding.binaryMessenger, "flutter_jailbreak_detection")
+        // RootBeer shells out (getprop, mount, which su) and queries
+        // PackageManager for dozens of packages, which can block the main
+        // thread for seconds on low-end devices. Handle calls in the background.
+        channel = MethodChannel(
+            binding.binaryMessenger,
+            "flutter_jailbreak_detection",
+            StandardMethodCodec.INSTANCE,
+            binding.binaryMessenger.makeBackgroundTaskQueue(),
+        )
         context = binding.applicationContext
         channel.setMethodCallHandler(this)
     }
